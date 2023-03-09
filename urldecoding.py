@@ -18,10 +18,11 @@ async def urldecoding(url):
         button.click()
         sleep(1)
 
-        element = driver.find_element(By.XPATH, '//*[@id="content"]/p[2]/textare')
+        element = driver.find_element(By.XPATH, '//*[@id="content"]/p[2]/textarea')
         full_url = element.text
         driver.close()
-        return(full_url)
+        return(full_url) 
     except:
         return('Произошла непредвиденная ошибка, сообщите моему создателю @petyal :(')
+    
     
