@@ -23,5 +23,5 @@ async def urldecoding(url):
         driver.close()
         return(full_url)
     except:
-        return('Произошла ошибка :(')
+        return('Произошла непредвиденная ошибка, сообщите моему создателю @petyal :(')
     
