@@ -7,7 +7,7 @@ import re
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
-
+import hashlib
 from screensaver import get_screenshot
 from settings import api_key, token
 from urldecoding import urldecoding
@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
-
+download_path=("C:\\Users\\Petyal\\Desktop\\bez0pasnik\\aiogram_bezopasnik")
 # ПОДКЛЮЧЕНИЕ К VIRUSTOTAL API 
 client = vt.Client(api_key)
 
@@ -167,6 +167,34 @@ async def process_password(message: types.Message, state: FSMContext):
 
     # завершаем диалог
     await state.finish()
+
+
+
+
+@dp.message_handler(content_types=types.ContentType.DOCUMENT)
+async def doc_handler(message: types.Message):
+    if document := message.document:
+        await document.download(destination_file=document['file_name'])
+
+        file_path = f'C:\\Users\\Petyal\\Desktop\\bez0pasnik\\{document["file_name"]}'
+
+        await bot.send_message(message.chat.id, 'Проверка началась')
+        with open(file_path, "rb") as f:
+            print('Началось сканирование')
+            analysis = await client.scan_file_async(f, wait_for_completion=True)
+            print('сканирование закончилось')
+
+        with open(document["file_name"], 'rb') as f:
+            file_bytes = f.read()
+            file_hash = hashlib.md5(file_bytes).hexdigest()
+            print(file_hash)
+
+        report = await client.get_object_async(f'/files/{file_hash}')
+
+        if report.get(attr_name='malicious'):
+            await message.reply("Есть вирус")
+        else:
+            await message.reply("Безвредно")
 
 
 if __name__ == '__main__':
