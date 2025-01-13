@@ -33,13 +33,13 @@ async def get_long_url(short_url):
 
     raise ValueError("Не удалось дешифровать ссылку ни одним из методов.")
 
-async def main():
-    short_url = 'https://clck.ru/3Fg9Sn'
-    try:
-        long_url = await get_long_url(short_url)
-        print(f'Длинный URL: {long_url}')
-    except ValueError as e:
-        print(e)
+# async def main():
+#     short_url = 'https://clck.ru/3Fg9Sn'
+#     try:
+#         long_url = await get_long_url(short_url)
+#         print(f'Длинный URL: {long_url}')
+#     except ValueError as e:
+#         print(e)
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# if __name__ == "__main__":
+#     asyncio.run(main())

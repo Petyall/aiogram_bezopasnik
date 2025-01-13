@@ -1,5 +1,5 @@
 from jinja2 import Template
-
+import time
 
 def generate_html_report(url, metrics, is_phishing):
     html_template = """
@@ -204,5 +204,9 @@ def generate_html_report(url, metrics, is_phishing):
         heatmap_data=heatmap_data
     )
 
-    with open("report.html", "w", encoding="utf-8") as file:
+    file_name = f"report_{time.time()}.html"
+
+    with open(file_name, "w", encoding="utf-8") as file:
         file.write(html_content)
+
+    return file_name

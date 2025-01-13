@@ -4,7 +4,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
 
-async def take_screenshot(url: str):
+async def take_screenshot(url: str, filename: str):
     def run_selenium(target_url):
         options = Options()
         options.add_argument('--headless')
@@ -18,15 +18,15 @@ async def take_screenshot(url: str):
         try:
             driver.get(target_url)
             time.sleep(3)
-            driver.save_screenshot('screenshot.png')
+            driver.save_screenshot(filename)
         finally:
             driver.quit()
     
     await asyncio.to_thread(run_selenium, url)
 
-async def main():
-    target_url = 'https://github.com/Petyall'
-    await take_screenshot(target_url)
+# async def main():
+#     target_url = 'https://github.com/Petyall'
+#     await take_screenshot(target_url)
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# if __name__ == "__main__":
+#     asyncio.run(main())
