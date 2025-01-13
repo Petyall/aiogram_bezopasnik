@@ -81,7 +81,7 @@ async def process_get_prediction(callback_query: CallbackQuery, state: FSMContex
         text="Ожидайте..."
     )
     try:
-        results, file_name = url_prediction(link)
+        results, file_name = await url_prediction(link)
         full_path = os.getenv('FULL_PATH') + file_name
         await callback_query.bot.edit_message_text(
             chat_id=callback_query.from_user.id,
