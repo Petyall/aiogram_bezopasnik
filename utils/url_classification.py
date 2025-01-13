@@ -1,4 +1,8 @@
-import tldextract, re, requests, whois, pandas
+import re
+import whois
+import pandas
+import requests
+import tldextract
 
 
 def get_metrics(url):

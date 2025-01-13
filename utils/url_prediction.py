@@ -2,8 +2,9 @@ import pandas
 
 from joblib import load
 
-from url_classification import get_metrics
-from url_visualization import generate_html_report
+from utils.url_classification import get_metrics
+from utils.url_visualization import generate_html_report
+
 
 prediction_model = load('./model/random_forest_model.pkl')
 
@@ -47,12 +48,10 @@ def url_prediction(url: str):
         print(metrics)
 
         if prediction[0] == 1:
-            # print("Ссылка является фишинговой")
             file_name = generate_html_report(url, metrics, "phishing")
             return("Осторожно, ссылка может быть опасной!\nГенерирую отчет...", file_name)
         else:
-            # print("Ссылка безопасна")
             file_name = generate_html_report(url, metrics, "legitimate")
 
-            return("Ссылка может безопасна.\nГенерирую отчет...", file_name)
+            return("Ссылка безопасна.\nГенерирую отчет...", file_name)
         

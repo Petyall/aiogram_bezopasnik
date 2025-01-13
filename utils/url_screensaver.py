@@ -1,5 +1,6 @@
-import asyncio
 import time
+import asyncio
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
@@ -23,6 +24,7 @@ async def take_screenshot(url: str, filename: str):
             driver.quit()
     
     await asyncio.to_thread(run_selenium, url)
+
 
 # async def main():
 #     target_url = 'https://github.com/Petyall'
