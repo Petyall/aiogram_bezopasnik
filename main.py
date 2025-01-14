@@ -9,13 +9,15 @@ from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 
 from app.handlers import bezopasnik_router
-
+from app.middleware import AlbumMiddleware
 
 load_dotenv()
 
 TOKEN = getenv("BOT_TOKEN")
 
 dp = Dispatcher()
+
+dp.message.middleware(AlbumMiddleware())
 
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))

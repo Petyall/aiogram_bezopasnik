@@ -1,14 +1,15 @@
 import re
 import os
 import time
-from dotenv import load_dotenv
 
-from aiogram import Router
+from dotenv import load_dotenv
+from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, FSInputFile
 
 from app.keyboards import url_action_keyboard
 from app.states import PhishingPredictionStates
+from utils.qr_reader import decode_qr
 from utils.url_expansion import get_long_url
 from utils.url_prediction import url_prediction
 from utils.url_screensaver import take_screenshot
@@ -21,6 +22,32 @@ bezopasnik_router = Router()
 URL_PATTERN = re.compile(
     r"https?://(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+(?:/[^\s]*)?"
 )
+
+async def process_qr_code(message: Message, file_id: str, index: int = None):
+    file = await message.bot.get_file(file_id)
+    file_name = f"qr_{time.time()}.png"
+    file_path = file.file_path
+
+    await message.bot.download_file(file_path, file_name)
+    try:
+        results = await decode_qr(file_name)
+        if results:
+            reply_text = f"На изображении {index} найден QR-код:\n{results}" if index else f"На изображении найден QR-код:\n{results}"
+        else:
+            reply_text = f"На изображении {index} не найден QR-код :(" if index else "На изображении не найден QR-код :("
+        await message.reply(reply_text)
+    finally:
+        os.remove(file_name)
+
+
+@bezopasnik_router.message(F.photo)
+async def qr_reader(message: Message, album: list[Message] = None):
+    if album:
+        for i, msg in enumerate(album, start=1):
+            await process_qr_code(message, msg.photo[-1].file_id, index=i)
+    else:
+        await process_qr_code(message, message.photo[-1].file_id)
+
 
 @bezopasnik_router.message()
 async def check_message(message: Message, state: FSMContext):
