@@ -23,33 +23,8 @@ URL_PATTERN = re.compile(
     r"https?://(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+(?:/[^\s]*)?"
 )
 
-async def process_qr_code(message: Message, file_id: str, index: int = None):
-    file = await message.bot.get_file(file_id)
-    file_name = f"qr_{time.time()}.png"
-    file_path = file.file_path
 
-    await message.bot.download_file(file_path, file_name)
-    try:
-        results = await decode_qr(file_name)
-        if results:
-            reply_text = f"На изображении {index} найден QR-код:\n{results}" if index else f"На изображении найден QR-код:\n{results}"
-        else:
-            reply_text = f"На изображении {index} не найден QR-код :(" if index else "На изображении не найден QR-код :("
-        await message.reply(reply_text)
-    finally:
-        os.remove(file_name)
-
-
-@bezopasnik_router.message(F.photo)
-async def qr_reader(message: Message, album: list[Message] = None):
-    if album:
-        for i, msg in enumerate(album, start=1):
-            await process_qr_code(message, msg.photo[-1].file_id, index=i)
-    else:
-        await process_qr_code(message, message.photo[-1].file_id)
-
-
-@bezopasnik_router.message()
+@bezopasnik_router.message(F.text)
 async def check_message(message: Message, state: FSMContext):
     match = URL_PATTERN.search(message.text)
     if match:
@@ -157,3 +132,29 @@ async def process_url_expansion(callback_query: CallbackQuery, state: FSMContext
         )
     finally:
         await state.clear()
+
+
+async def process_qr_code(message: Message, file_id: str, index: int = None):
+    file = await message.bot.get_file(file_id)
+    file_name = f"qr_{time.time()}.png"
+    file_path = file.file_path
+
+    await message.bot.download_file(file_path, file_name)
+    try:
+        results = await decode_qr(file_name)
+        if results:
+            reply_text = f"На изображении {index} найден QR-код:\n{results}" if index else f"На изображении найден QR-код:\n{results}"
+        else:
+            reply_text = f"На изображении {index} не найден QR-код :(" if index else "На изображении не найден QR-код :("
+        await message.reply(reply_text)
+    finally:
+        os.remove(file_name)
+
+
+@bezopasnik_router.message(F.photo)
+async def qr_reader(message: Message, album: list[Message] = None):
+    if album:
+        for i, msg in enumerate(album, start=1):
+            await process_qr_code(message, msg.photo[-1].file_id, index=i)
+    else:
+        await process_qr_code(message, message.photo[-1].file_id)
