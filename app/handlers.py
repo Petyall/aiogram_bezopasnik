@@ -4,11 +4,13 @@ import time
 
 from dotenv import load_dotenv
 from aiogram import Router, F
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, FSInputFile
 
-from app.keyboards import url_action_keyboard
-from app.states import PhishingPredictionStates
+from app.requests import MetricRequests
+from app.states import PhishingPredictionStates, GetMetricStates
+from app.keyboards import url_action_keyboard, get_metrics_keyboard, get_metrics_cancel_keyboard
 from utils.qr_reader import decode_qr
 from utils.url_expansion import get_long_url
 from utils.url_prediction import url_prediction
@@ -22,6 +24,54 @@ bezopasnik_router = Router()
 URL_PATTERN = re.compile(
     r"https?://(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+(?:/[^\s]*)?"
 )
+
+
+@bezopasnik_router.message(Command("metrics"))
+async def cmd_metrics(message: Message, state: FSMContext):
+    await state.set_state(GetMetricStates.SELECT_CATEGORY)
+    keyboard = await get_metrics_keyboard()
+    await message.reply(
+        f"Выберите интересующую категорию параметров проверки:", reply_markup=keyboard
+    )
+
+
+@bezopasnik_router.callback_query(lambda c: c.data.startswith("category_"), GetMetricStates.SELECT_CATEGORY)
+async def get_metric_process_select_category(callback_query: CallbackQuery, state: FSMContext):
+    category_id = int(callback_query.data.split("_")[1])
+    selected_category = await MetricRequests.find_one_or_none(id=category_id)
+
+    await state.set_state(GetMetricStates.SELECT_METRIC)
+
+    keyboard = await get_metrics_cancel_keyboard()
+    await callback_query.bot.edit_message_text(
+        chat_id=callback_query.from_user.id,
+        message_id=callback_query.message.message_id,
+        text=f"{selected_category.description}",
+        reply_markup=keyboard,
+    )
+
+
+@bezopasnik_router.callback_query(lambda c: c.data == "cancel_getting_metric")
+async def get_metric_process_cancel(callback_query: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback_query.bot.edit_message_text(
+        chat_id=callback_query.from_user.id,
+        message_id=callback_query.message.message_id,
+        text="Просмотр параметров проверки завершен",
+    )
+
+
+@bezopasnik_router.callback_query(lambda c: c.data == "back_to_categories")
+async def get_metric_process_back_to_categories(callback_query: CallbackQuery, state: FSMContext):
+    await state.set_state(GetMetricStates.SELECT_CATEGORY)
+
+    keyboard = await get_metrics_keyboard()
+    await callback_query.bot.edit_message_text(
+        chat_id=callback_query.from_user.id,
+        message_id=callback_query.message.message_id,
+        text=f"Выберите интересующую категорию параметров проверки:",
+        reply_markup=keyboard,
+    )
 
 
 @bezopasnik_router.message(F.text)
