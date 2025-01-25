@@ -6,9 +6,9 @@ from app.requests import MetricRequests
 
 def url_action_keyboard():
     buttons = [
-        [InlineKeyboardButton(text="Проверка на фишинг", callback_data="prediction"), 
-         InlineKeyboardButton(text="Получить скриншот", callback_data="screenshot")],
-        [InlineKeyboardButton(text="Дешифрование короткой ссылки", callback_data="expansion")]
+        [InlineKeyboardButton(text="🦠 Проверка на фишинг", callback_data="prediction"), 
+         InlineKeyboardButton(text="🖼 Получить скриншот", callback_data="screenshot")],
+        [InlineKeyboardButton(text="🔄 Расшифровка короткой ссылки", callback_data="expansion")]
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return(keyboard)
@@ -28,8 +28,8 @@ async def get_metrics_keyboard():
 
 async def get_metrics_cancel_keyboard():
     buttons = [
-        [InlineKeyboardButton(text="Назад", callback_data="back_to_categories")],
-        [InlineKeyboardButton(text="Отмена", callback_data="cancel_getting_metric")]
+        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_categories")],
+        [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_getting_metric")]
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return(keyboard)

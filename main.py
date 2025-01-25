@@ -6,13 +6,14 @@ from os import getenv
 from dotenv import load_dotenv
 from aiogram.types import Message
 from aiogram.enums import ParseMode
-from aiogram import Bot, Dispatcher, html
+from aiogram import Bot, Dispatcher
 from aiogram.filters import CommandStart
 from aiogram.client.default import DefaultBotProperties
 
 from app.handlers import bezopasnik_router
 from app.middleware import AlbumMiddleware
 from app.requests import AnswerRequests
+
 
 load_dotenv()
 
@@ -24,10 +25,9 @@ dp.message.middleware(AlbumMiddleware())
 
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
-    raw_message = await AnswerRequests.find_one_or_none(name='start')
-    formatted_message = raw_message.description.format()
+    answer = await AnswerRequests.find_one_or_none(name='start')
     await message.answer(
-        f"Привет, *{message.from_user.full_name}*!\n\n{formatted_message}"
+        f"Привет, *{message.from_user.full_name}*!\n\n{answer.description}"
     )
 
 

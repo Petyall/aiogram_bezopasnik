@@ -8,7 +8,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, FSInputFile
 
-from app.requests import MetricRequests
+from app.requests import MetricRequests, AnswerRequests
 from app.states import PhishingPredictionStates, GetMetricStates
 from app.keyboards import url_action_keyboard, get_metrics_keyboard, get_metrics_cancel_keyboard
 from utils.qr_reader import decode_qr
@@ -24,6 +24,26 @@ bezopasnik_router = Router()
 URL_PATTERN = re.compile(
     r"https?://(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+(?:/[^\s]*)?"
 )
+
+
+@bezopasnik_router.message(Command("url_check"))
+async def cmd_url_check(message: Message):
+    answer = await AnswerRequests.find_one_or_none(name="url_check") 
+    await message.reply(answer.description)
+
+
+@bezopasnik_router.message(Command("qr_decode"))
+async def cmd_qr_decode(message: Message):
+    answer = await AnswerRequests.find_one_or_none(name="qr_decode") 
+    await message.reply(answer.description)
+
+
+@bezopasnik_router.message(Command("help"))
+async def cmd_help(message: Message):
+    answer = await AnswerRequests.find_one_or_none(name="help")
+    await message.reply(
+        answer.description
+    )
 
 
 @bezopasnik_router.message(Command("metrics"))
@@ -82,9 +102,9 @@ async def check_message(message: Message, state: FSMContext):
         await state.set_state(PhishingPredictionStates.ENTER_VALUE)
         await state.update_data(link=link)
         keyboard = url_action_keyboard()
-        await message.reply(f"Что я могу сделать с этой ссылкой?\n{link}", reply_markup=keyboard)
+        await message.reply(f"Что я могу сделать с этой ссылкой 👀?\n\n{link}", reply_markup=keyboard)
     else:
-        await message.reply("В вашем сообщении нет ссылки :(")
+        await message.reply("В вашем сообщении нет ссылки 🫨")
 
 
 @bezopasnik_router.callback_query(lambda c: c.data == 'screenshot', PhishingPredictionStates.ENTER_VALUE)
@@ -94,7 +114,7 @@ async def process_get_screenshot(callback_query: CallbackQuery, state: FSMContex
     await callback_query.bot.edit_message_text(
         chat_id=callback_query.from_user.id,
         message_id=callback_query.message.message_id,
-        text="Ожидайте..."
+        text="Пытаюсь получить скриншот, ожидайте..."
     )
     filename = f'screenshot_{time.time()}.png'
     try:
@@ -115,7 +135,7 @@ async def process_get_screenshot(callback_query: CallbackQuery, state: FSMContex
     except Exception as e:
         await callback_query.bot.send_message(
             chat_id=callback_query.from_user.id,
-            text=f"Произошла ошибка при создании скриншота: {e}"
+            text=f"⚠️Произошла ошибка при создании скриншота⚠️\n\n{e}"
         )
     finally:
         if os.path.exists(filename):
@@ -130,32 +150,34 @@ async def process_get_prediction(callback_query: CallbackQuery, state: FSMContex
     await callback_query.bot.edit_message_text(
         chat_id=callback_query.from_user.id,
         message_id=callback_query.message.message_id,
-        text="Ожидайте..."
+        text="Запускаю свои суперспособности, ожидайте..."
     )
     try:
         results, file_name = await url_prediction(link)
-        full_path = os.getenv('FULL_PATH') + file_name
         await callback_query.bot.edit_message_text(
             chat_id=callback_query.from_user.id,
             message_id=callback_query.message.message_id,
             text=results
         )
+
+        full_path = os.getenv('FULL_PATH') + file_name
         screenshot_file_name = f'screenshot_{time.time()}.png'
         await take_screenshot(full_path, screenshot_file_name)
+
         screenshot = FSInputFile(screenshot_file_name)
         await callback_query.bot.send_photo(
             chat_id=callback_query.from_user.id,
             photo=screenshot
         )
-        for filename in (screenshot_file_name, file_name):
-            if os.path.exists(filename):
-                os.remove(filename)
     except Exception as e:
         await callback_query.bot.send_message(
             chat_id=callback_query.from_user.id,
-            text=f"Произошла ошибка при предсказании: {e}"
+            text=f"⚠️Произошла ошибка при анализировании отправленной ссылки⚠️\n\n{e}"
         )
     finally:
+        for filename in (screenshot_file_name, file_name):
+            if os.path.exists(filename):
+                os.remove(filename)
         await state.clear()
 
 
@@ -166,7 +188,7 @@ async def process_url_expansion(callback_query: CallbackQuery, state: FSMContext
     await callback_query.bot.edit_message_text(
         chat_id=callback_query.from_user.id,
         message_id=callback_query.message.message_id,
-        text="Ожидайте..."
+        text="Пытаюсь получить полный адрес ссылки, ожидайте..."
     )
     try:
         results = await get_long_url(link)
@@ -178,7 +200,7 @@ async def process_url_expansion(callback_query: CallbackQuery, state: FSMContext
     except Exception as e:
         await callback_query.bot.send_message(
             chat_id=callback_query.from_user.id,
-            text=f"Произошла ошибка при предсказании: {e}"
+            text=f"⚠️Произошла ошибка при расшифровке короткой ссылки⚠️\n\n{e}"
         )
     finally:
         await state.clear()
@@ -193,18 +215,21 @@ async def process_qr_code(message: Message, file_id: str, index: int = None):
     try:
         results = await decode_qr(file_name)
         if results:
-            reply_text = f"На изображении {index} найден QR-код:\n{results}" if index else f"На изображении найден QR-код:\n{results}"
+            reply_text = f"На {index} изображении найден QR-код👀\n\n{results}" if index else f"На изображении найден QR-код👀\n\n{results}"
         else:
-            reply_text = f"На изображении {index} не найден QR-код :(" if index else "На изображении не найден QR-код :("
+            reply_text = f"На {index} изображении не найден QR-код🫨" if index else "На изображении не найден QR-код🫨"
         await message.reply(reply_text)
     finally:
         os.remove(file_name)
 
 
 @bezopasnik_router.message(F.photo)
-async def qr_reader(message: Message, album: list[Message] = None):
+async def qr_reader(message: Message, album: list[Message] = None):    
     if album:
+        await message.reply("Пытаюсь найти QR-код на ваших изображениях, ожидайте...")
         for i, msg in enumerate(album, start=1):
             await process_qr_code(message, msg.photo[-1].file_id, index=i)
+        
     else:
+        await message.reply("Пытаюсь найти QR-код на вашем изображении, ожидайте...")
         await process_qr_code(message, message.photo[-1].file_id)

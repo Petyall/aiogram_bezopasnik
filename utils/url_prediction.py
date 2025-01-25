@@ -11,7 +11,7 @@ async def url_prediction(url: str):
     url_metric = await get_metrics(url)
 
     if not url_metric:
-        return "Не удалось получить метрики для указанной ссылки."
+        return "⚠️Не удалось получить метрики для указанной ссылки⚠️"
 
     metrics = {
         key: url_metric[key] for key in [
@@ -32,6 +32,6 @@ async def url_prediction(url: str):
     file_name = await generate_html_report(url, metrics, report_type)
 
     if prediction == 1:
-        return "Осторожно, ссылка может быть опасной!\nГенерирую отчет...", file_name
+        return "❌Осторожно, ссылка может быть опасной!❌\n\nГенерирую отчёт...", file_name
     else:
-        return "Ссылка безопасна.\nГенерирую отчет...", file_name
+        return "✅Ссылка безопасна✅\n\nГенерирую отчёт...", file_name
